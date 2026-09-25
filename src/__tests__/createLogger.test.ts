@@ -1,5 +1,5 @@
-jest.mock('fs', () => ({
-  ...jest.requireActual('fs'),
+jest.mock('node:fs', () => ({
+  ...jest.requireActual('node:fs'),
   mkdirSync: jest.fn(),
   openSync: jest.fn().mockReturnValue(42),
   createWriteStream: jest.fn(),
@@ -7,10 +7,10 @@ jest.mock('fs', () => ({
   readdirSync: jest.fn().mockReturnValue([]),
 }));
 
-import { createLogger, Logger } from '../logger';
 import * as fs from 'node:fs';
 import { existsSync, unlinkSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { createLogger, Logger } from '../logger';
 
 declare global {
   namespace NodeJS {
@@ -48,6 +48,7 @@ describe('createLogger', () => {
     end: jest.Mock;
     writableNeedDrain: boolean;
     once: jest.Mock;
+    on: jest.Mock;
   };
 
   beforeAll(() => {
@@ -66,6 +67,7 @@ describe('createLogger', () => {
       end: jest.fn((cb?: () => void) => cb?.()),
       writableNeedDrain: false,
       once: jest.fn(),
+      on: jest.fn(),
     };
     (fs.createWriteStream as jest.Mock).mockReturnValue(mockStream);
     (fs.statSync as jest.Mock).mockReturnValue({ size: 0 });
@@ -308,7 +310,7 @@ describe('createLogger', () => {
       delete process.env.LOG_MAX_FILES;
     });
 
-    it('should prioritize: direct options > config file > env vars > defaults', () => {
+    it('should prioritize: direct options > env vars > config file > defaults', () => {
       const logger = createLogger({
         logFilePath: './logs/direct-priority.log',
       });
@@ -324,6 +326,33 @@ describe('createLogger', () => {
       );
     });
 
+    it('should let environment variables override the config file', () => {
+      const logger = createLogger();
+
+      logger.info('Test message');
+
+      expect(fs.createWriteStream).toHaveBeenCalledWith(
+        resolve('./logs/env-priority-2026-03-04.log'),
+        { fd: 42, autoClose: true }
+      );
+    });
+
+    it('should keep lower layers for fields the options do not set', () => {
+      process.env.LOG_ROTATE_BY_DATE = 'false';
+
+      const logger = createLogger({ logFilePath: './logs/only-path.log' });
+      logger.info('Test message');
+
+      // The path comes from the options, rotateByDate from the environment:
+      // a layer overrides field by field, it does not replace the ones below.
+      expect(fs.createWriteStream).toHaveBeenCalledWith(
+        resolve('./logs/only-path.log'),
+        { fd: 42, autoClose: true }
+      );
+
+      delete process.env.LOG_ROTATE_BY_DATE;
+    });
+
     it('should use config file when no direct options provided', () => {
       delete process.env.LOG_FILE_PATH;
 
@@ -337,6 +366,44 @@ describe('createLogger', () => {
       );
       expect(mockStream.write).toHaveBeenCalledWith(
         expect.stringContaining('"level":"info"')
+      );
+    });
+  });
+
+  describe('invalid configuration', () => {
+    const badEnv = [
+      ['LOG_MAX_FILE_SIZE', 'oops'],
+      ['LOG_MAX_FILES', '0'],
+      ['LOG_MAX_DAYS', '-3'],
+    ] as const;
+
+    afterEach(() => {
+      for (const [name] of badEnv) {
+        delete process.env[name];
+      }
+    });
+
+    it.each(badEnv)('should reject %s=%s', (name, value) => {
+      process.env[name] = value;
+
+      // Silently ignoring it is worse than failing: a NaN limit turns every
+      // size comparison false, and rotation quietly stops happening.
+      expect(() => createLogger()).toThrow(new RegExp(name));
+    });
+
+    it('should reject a config file that is not valid JSON', () => {
+      writeFileSync(testConfigPath, '{ "logFilePath": ');
+
+      expect(() => createLogger()).toThrow(/not valid JSON/);
+    });
+
+    it('should fall back to the default path when options omit it', () => {
+      const logger = createLogger({ maxFiles: 3 });
+      logger.info('Test message');
+
+      expect(fs.createWriteStream).toHaveBeenCalledWith(
+        resolve('./logs/app-2026-03-04.log'),
+        { fd: 42, autoClose: true }
       );
     });
   });
