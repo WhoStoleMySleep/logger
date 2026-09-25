@@ -158,6 +158,33 @@ that matters. Unminified output keeps function names and line numbers, so a
 stack trace stays readable without them — it points into `index.js` instead of
 `logger.ts`.
 
+## 11. The timestamp is formatted once per millisecond
+
+Formatting the current time was the single most expensive part of writing an
+entry — around 460 ns against 256 ns for serialising it, roughly 43% of the
+work. `toISOString()` resolves to milliseconds, so every entry emitted inside
+the same millisecond was paying to rebuild a string it had already built.
+
+The formatted string is now cached against the millisecond it was derived from
+and reused until the clock ticks. One `Date.now()` supplies both the cache key
+and the value the string is built from, so the result is the same string a
+direct `new Date().toISOString()` would have returned — the resolution of the
+log is unchanged.
+
+The cache is a static, shared by every logger in the process, because it is
+keyed on absolute time and nothing about it is per-instance.
+
+This only pays off under bursts. An application writing a few entries a second
+misses the cache every time and pays an extra `Date.now()` — about 40 ns, on a
+path that is nowhere near its limit. Bursts are the case worth optimising: an
+error storm, a batch job, a request trace. Measured on the throughput bench, it
+takes accepted entries from ~940k/sec to ~1.85M/sec together with the change
+below.
+
+Counting bytes moved for the same reason. `Buffer.byteLength` ran on every
+entry, but `currentSize` is only ever read by size-based rotation, so it is now
+skipped entirely when `maxFileSize` is unset — the default.
+
 ## Known gaps
 
 - **No level filtering.** Every call writes; there is no `level: 'warn'` that

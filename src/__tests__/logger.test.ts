@@ -210,6 +210,61 @@ describe('Logger', () => {
     });
   });
 
+  describe('timestamps', () => {
+    let logger: Logger;
+
+    beforeEach(() => {
+      logger = new Logger({ logFilePath: mockLogFilePath });
+    });
+
+    it('should stamp entries with the current time at millisecond resolution', () => {
+      logger.info('first');
+
+      const line = mockStream.write.mock.calls[0]?.[0] as string;
+      expect(JSON.parse(line).timestamp).toBe('2026-03-04T10:00:00.000Z');
+    });
+
+    it('should reuse the formatted timestamp within one millisecond', () => {
+      logger.info('first');
+      logger.info('second');
+
+      const stamps = mockStream.write.mock.calls.map(
+        (call) => JSON.parse(call[0] as string).timestamp as string
+      );
+      expect(stamps).toEqual([
+        '2026-03-04T10:00:00.000Z',
+        '2026-03-04T10:00:00.000Z',
+      ]);
+    });
+
+    it('should re-format once the clock has moved on', () => {
+      logger.info('first');
+      jest.setSystemTime(new Date('2026-03-04T10:00:00.007Z'));
+      logger.info('second');
+      jest.setSystemTime(new Date('2026-03-04T10:00:00Z'));
+
+      const stamps = mockStream.write.mock.calls.map(
+        (call) => JSON.parse(call[0] as string).timestamp as string
+      );
+      expect(stamps).toEqual([
+        '2026-03-04T10:00:00.000Z',
+        '2026-03-04T10:00:00.007Z',
+      ]);
+    });
+
+    it('should not leak a stale timestamp between separate loggers', () => {
+      logger.info('first');
+      jest.setSystemTime(new Date('2026-03-04T10:00:00.500Z'));
+      new Logger({ logFilePath: mockLogFilePath }).info('second');
+      jest.setSystemTime(new Date('2026-03-04T10:00:00Z'));
+
+      const stamps = mockStream.write.mock.calls.map(
+        (call) => JSON.parse(call[0] as string).timestamp as string
+      );
+      expect(stamps[1]).toBe('2026-03-04T10:00:00.500Z');
+    });
+  });
+
   describe('log rotation (size-based)', () => {
     it('should rotate when cumulative size exceeds maxFileSize', () => {
       const maxFileSize = 1024;

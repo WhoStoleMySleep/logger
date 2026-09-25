@@ -108,6 +108,18 @@ export class Logger {
   private root: Logger;
   private readonly reported = new Set<string>();
 
+  /**
+   * Last formatted timestamp, shared by every logger in the process.
+   *
+   * `toISOString()` costs roughly 460 ns and is the single most expensive part
+   * of writing an entry — more than serialising it. Entries emitted within the
+   * same millisecond carry the same timestamp anyway, so the string is reused
+   * until the clock ticks. Keyed on the millisecond it was built from, which
+   * makes the result identical to calling `new Date().toISOString()` directly.
+   */
+  private static cachedMs = 0;
+  private static cachedIso = '';
+
   public constructor(
     options: LoggerOptions,
     context: Record<string, unknown> = {}
@@ -264,18 +276,24 @@ export class Logger {
       return;
     }
 
+    // Only size-based rotation reads currentSize, and measuring a line costs
+    // about 5% of the write path.
+    if (this.maxFileSize === undefined) return;
+
     this.currentSize += Buffer.byteLength(line, 'utf-8');
 
-    if (
-      this.maxFileSize !== undefined &&
-      this.currentSize >= this.maxFileSize
-    ) {
+    if (this.currentSize >= this.maxFileSize) {
       this.rotate();
     }
   }
 
   public log(level: LogLevel, message: string, data?: unknown): void {
-    const timestamp = new Date().toISOString();
+    const ms = Date.now();
+    if (ms !== Logger.cachedMs) {
+      Logger.cachedMs = ms;
+      Logger.cachedIso = new Date(ms).toISOString();
+    }
+    const timestamp = Logger.cachedIso;
     const entry: Record<string, unknown> = {
       timestamp,
       level,
