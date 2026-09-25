@@ -2,8 +2,8 @@
 
 ## Supported Versions
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
+Fixes land on the latest minor of the current major; older majors are not
+patched.
 
 | Version | Supported          |
 | ------- | ------------------ |
