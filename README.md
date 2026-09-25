@@ -282,8 +282,8 @@ Classic numbered rotation — no date in filename. When the file exceeds `maxFil
 ```
 node v24.14.1 on darwin/arm64, Apple M1, 200,000 entries of 133 B
 
-accepted   867,523 logs/sec    the loop gets its thread back
-drained    674,257 logs/sec    entries are on disk, flush and close included
+accepted   1,850,397 logs/sec    the loop gets its thread back
+drained    1,363,967 logs/sec    entries are on disk, flush and close included
 ```
 
 Reproduce with `npm run bench`. Two numbers because a buffered writer has two
