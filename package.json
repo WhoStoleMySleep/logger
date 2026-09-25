@@ -1,6 +1,6 @@
 {
   "name": "@wsms/logger",
-  "version": "1.2.6",
+  "version": "1.2.7",
   "description": "A lightweight TypeScript logging utility for creating structured log files",
   "main": "dist/index.cjs",
   "module": "dist/index.js",

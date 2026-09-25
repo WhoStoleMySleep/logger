@@ -1,3 +1,10 @@
+## [1.2.7](https://github.com/WhoStoleMySleep/logger/compare/v1.2.6...v1.2.7) (2026-09-25)
+
+
+### Performance Improvements
+
+* cut the per-entry cost of timestamping and byte counting ([#31](https://github.com/WhoStoleMySleep/logger/issues/31)) ([7e0bd89](https://github.com/WhoStoleMySleep/logger/commit/7e0bd8933fbe149d2e984d2246f8e43312ae0ef2))
+
 ## [1.2.6](https://github.com/WhoStoleMySleep/logger/compare/v1.2.5...v1.2.6) (2026-09-25)
 
 
