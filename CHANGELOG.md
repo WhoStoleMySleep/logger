@@ -1,3 +1,10 @@
+## [1.2.5](https://github.com/WhoStoleMySleep/logger/compare/v1.2.4...v1.2.5) (2026-09-25)
+
+
+### Bug Fixes
+
+* reliable configuration, reported write failures and a tested artefact ([#17](https://github.com/WhoStoleMySleep/logger/issues/17)) ([230daa0](https://github.com/WhoStoleMySleep/logger/commit/230daa0205f49f102db9e3b29bb699d742032c1d))
+
 ## [1.2.4](https://github.com/WhoStoleMySleepDev/logger/compare/v1.2.3...v1.2.4) (2026-03-04)
 
 
