@@ -2,43 +2,60 @@ name: CI
 
 on:
   push:
-    branches: [develop]
-  pull_request:
     branches: [main, develop]
+  pull_request:
+
+# A branch that is pushed twice in a minute does not need two full matrices.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     strategy:
       matrix:
         node-version: [18.x, 20.x, 22.x, 24.x]
-    
+
     steps:
-      - uses: actions/checkout@v4
-      
+      - uses: actions/checkout@v7
+
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Run linting
         run: npm run lint
-      
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Typecheck
+        run: npm run typecheck
+
       - name: Run tests
         run: npm run test:coverage
-      
+
       - name: Build project
         run: npm run build
-      
+
+      # The steps above all read TypeScript source. This one packs the tarball
+      # npm would publish and loads it the two ways a consumer can — the only
+      # check that sees the exports map, the CJS build and the .d.cts files.
+      - name: Smoke-test the published package
+        run: npm run smoke
+
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
         with:
-          file: ./coverage/lcov.info
+          files: ./coverage/lcov.info
           flags: unittests
           name: codecov-umbrella
+          token: ${{ secrets.CODECOV_TOKEN }}
         if: matrix.node-version == '24.x'

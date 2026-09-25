@@ -29,7 +29,10 @@
     "format": "biome format --write src/**/*.ts",
     "format:check": "biome format src/**/*.ts",
     "prepare": "husky",
-    "prepublishOnly": "npm run build && npm run test && npm run lint"
+    "prepublishOnly": "npm run build && npm run test && npm run lint && npm run smoke",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json",
+    "smoke": "node scripts/smoke.mjs",
+    "bench": "tsx bench/throughput.ts"
   },
   "keywords": [
     "logging",
