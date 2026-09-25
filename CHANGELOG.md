@@ -1,3 +1,10 @@
+## [1.2.6](https://github.com/WhoStoleMySleep/logger/compare/v1.2.5...v1.2.6) (2026-09-25)
+
+
+### Bug Fixes
+
+* use the git+ prefix npm expects in repository.url ([#24](https://github.com/WhoStoleMySleep/logger/issues/24)) ([9df7e50](https://github.com/WhoStoleMySleep/logger/commit/9df7e505bd9ec821ce137697f491657c221c47a5))
+
 ## [1.2.5](https://github.com/WhoStoleMySleep/logger/compare/v1.2.4...v1.2.5) (2026-09-25)
 
 
