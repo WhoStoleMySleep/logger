@@ -311,7 +311,7 @@ Design decisions and known gaps are written down in [DESIGN.md](DESIGN.md).
 
 ## Related
 
-- [`@wsms/logger-connect-nuxt`](https://github.com/WhoStoleMySleepDev/logger-connect-nuxt) — Nuxt 3/4 module with auto-imported `useLogger()` for server routes and components
+- [`@wsms/logger-connect-nuxt`](https://github.com/WhoStoleMySleep/logger-connect-nuxt) — Nuxt 3/4 module with auto-imported `useLogger()` for server routes and components
 
 ## License
 

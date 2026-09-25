@@ -38,7 +38,7 @@ We use **semantic-release** → please write conventional commits.
 ## Development Setup
 
 ```bash
-git clone https://github.com/WhoStoleMySleepDev/logger.git
+git clone https://github.com/WhoStoleMySleep/logger.git
 cd logger
 npm install
 npm run build      # tsup
