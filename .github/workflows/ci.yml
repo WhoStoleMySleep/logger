@@ -51,6 +51,10 @@ jobs:
       - name: Smoke-test the published package
         run: npm run smoke
 
+      # The upload is tokenless — this repository has no CODECOV_TOKEN. That
+      # works everywhere except on dependabot branches, where GitHub withholds
+      # the credentials the action needs to claim the run, so it is skipped
+      # there rather than failing an otherwise green dependency bump.
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v7
         with:
@@ -58,4 +62,5 @@ jobs:
           flags: unittests
           name: codecov-umbrella
           token: ${{ secrets.CODECOV_TOKEN }}
-        if: matrix.node-version == '24.x'
+          fail_ci_if_error: false
+        if: matrix.node-version == '24.x' && github.actor != 'dependabot[bot]'
